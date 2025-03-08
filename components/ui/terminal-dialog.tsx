@@ -50,27 +50,16 @@ export function TerminalDialog({ isOpen, onClose, appName, machineId }: Terminal
       // Manual fallback to direct API call if type issue
       let result;
       try {
-        console.log('Attempting to execute command via API client:', { appName, machineId, command: cmdArray });
         // @ts-ignore - TypeScript doesn't recognize the method due to type definition
         result = await flyApi.execMachine(appName, machineId, cmdArray);
-        console.log('API client exec result:', result);
       } catch (execError) {
-        console.error('Exec error via API client:', execError);
-        
         // Fallback to direct API call
-        console.log('Falling back to direct fetch API call');
         const token = localStorage.getItem('flyApiToken');
         if (!token) {
-          console.error('No API token found in localStorage');
           throw new Error('Authentication token not found');
         }
         
         // Send command as array according to API documentation
-        console.log('Sending command to API via fetch:', {
-          url: `/api/proxy/apps/${appName}/machines/${machineId}/exec`,
-          command: cmdArray
-        });
-        
         const response = await fetch(`/api/proxy/apps/${appName}/machines/${machineId}/exec`, {
           method: 'POST',
           headers: {
@@ -83,10 +72,8 @@ export function TerminalDialog({ isOpen, onClose, appName, machineId }: Terminal
           })
         });
         
-        console.log('API response status:', response.status);
         if (!response.ok) {
           const errorText = await response.text();
-          console.error('API error response:', errorText);
           throw new Error(`API Error (${response.status}): ${errorText}`);
         }
         
@@ -99,12 +86,10 @@ export function TerminalDialog({ isOpen, onClose, appName, machineId }: Terminal
         throw new Error('No result from API call');
       }
     } catch (error: any) {
-      console.error('Error executing command:', error);
-      
-      // Show more detailed error in the terminal
+      // Show error in the terminal
       setOutput({
         stdout: '',
-        stderr: `Error executing command: ${error.message || 'Unknown error'}\n\nPlease check console for more details.`,
+        stderr: `Error executing command: ${error.message || 'Unknown error'}`,
         exit_code: 1
       });
       
